@@ -13,6 +13,9 @@ BatteryHub are listed in its own releases.
   or very light picks are adjusted so they stay readable. *Reset color* goes back; *Forget device* removes it.
 - **Glow strength:** *Glow behind colored icons* (Settings > Taskbar) goes from Off through Soft, Normal (as
   before), Strong and Very strong.
+- **Keychron / Lemokey mice on receivers with vendor id 362D** are now tried with the same Launcher protocols as
+  Keychron's own 3434 receivers (hardware untested).
+- **Rapoo VT7 Max V2 and VT7 V2** show their model name.
 
 ## 1.3.2 (2026-11-26)
 

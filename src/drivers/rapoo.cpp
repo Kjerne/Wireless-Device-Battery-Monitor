@@ -43,6 +43,8 @@ const Model kModels[] = {
     { 0x4621, 0x1421, L"Rapoo VT3S Max" },
     { 0x4613, 0x1413, L"Rapoo VT7" },
     { 0x4616, 0x1416, L"Rapoo VT7 Max" },
+    { 0x4B05, 0x1B05, L"Rapoo VT7 Max V2" },
+    { 0x4660, 0x1460, L"Rapoo VT7 V2" },
     { 0x4614, 0x1414, L"Rapoo VT9 (Gen 2)" },
     { 0x4618, 0x1418, L"Rapoo VT9 Max" },
     { 0x4415, 0x1215, L"Rapoo VT3 Pro" },

@@ -370,7 +370,12 @@ void PollKeychron(PollContext& ctx) {
     PollLegacy(ctx);
     PollUltraLink(ctx);
     PollUltraKeyboard(ctx);
-    for (auto [vid, pid] : ctx.Products(0x3434)) {
+    // Keychron's second vendor id 362D (Lemokey, newer receivers) runs the same Launcher mouse protocols: the
+    // Launcher accepts "2D 36" as well as "34 34" in the 8k_nordic reply. Only the mouse protocols are tried
+    // there; the Link keyboard receiver query stays on 3434.
+    auto products = ctx.Products(0x3434);
+    for (auto p : ctx.Products(0x362D)) products.push_back(p);
+    for (auto [vid, pid] : products) {
         for (const HidColl* c : ctx.Find(vid, pid, [](const HidColl& c) { return c.page() >= 0xFF00 && c.outLen() == 65 && c.inLen() == 65; })) {
             HidDev d;
             if (!d.Open(*c)) continue;
@@ -419,6 +424,6 @@ void PollKeychron(PollContext& ctx) {
             ctx.Add(s, vid, pid);
             break;
         }
-        PollKeychronLinkKeyboard(ctx, vid, pid);
+        if (vid == 0x3434) PollKeychronLinkKeyboard(ctx, vid, pid);
     }
 }
