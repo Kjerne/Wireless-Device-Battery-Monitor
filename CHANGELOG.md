@@ -13,6 +13,10 @@ BatteryHub are listed in its own releases.
   or very light picks are adjusted so they stay readable. *Reset color* goes back; *Forget device* removes it.
 - **Glow strength:** *Glow behind colored icons* (Settings > Taskbar) goes from Off through Soft, Normal (as
   before), Strong and Very strong.
+- **Windhawk (experimental):** where Windhawk is installed, Settings > Taskbar lists its turned-on taskbar mods
+  and has *Follow taskbar mods that move the clock* (on by default): on a Windows 11 taskbar the clock's own
+  position is read with UI Automation, so a tray moved by a mod such as Windows 11 Taskbar Styler no longer ends
+  up under the strip. The app only reads Windhawk's mod list; it changes nothing there.
 - **Keychron / Lemokey mice on receivers with vendor id 362D** are now tried with the same Launcher protocols as
   Keychron's own 3434 receivers (hardware untested).
 - **Rapoo VT7 Max V2 and VT7 V2** show their model name.

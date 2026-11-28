@@ -42,6 +42,7 @@
 #include "offset_dialog.h"
 #include "widget.h"
 #include "panel.h"
+#include "windhawk.h"
 #include "app_version.h"
 #include "update_win.h"
 #include "update_apply.h"
@@ -69,7 +70,7 @@ enum MenuId : UINT {
     ID_REFRESH = 100, ID_AUTOSTART, ID_HIDE_LAST_KNOWN, ID_WIDGET_BACKGROUND, ID_EXIT, ID_MODE_WIDGET, ID_MODE_TRAY, ID_REPORT,
     ID_BRAND_COLORS, ID_STACKED, ID_SHOW_DISCONNECTED, ID_RECORD_HISTORY, ID_DIM_SLEEPING,
     ID_TRAY_WHEN_EMPTY, ID_MAKE_ROOM, ID_FAR_LEFT, ID_PERCENT_SIGN, ID_RING_STYLE, ID_BEFORE_APPS, ID_CONNECTION_ICONS, ID_KEEP_MOUSE_LAST_KNOWN, ID_SHORT_RUNTIME_ALERT, ID_HOVER_CARD, ID_HOVER_CHART, ID_TRAY_DEVICE_ICONS, ID_ANIMATE_CHARGING, ID_TRACK_SINCE, ID_TRACK_AWAKE, ID_TRACK_EMPTY, ID_RUNTIME_WIDGET, ID_MODE_MYFINDER,
-    ID_OPEN_HISTORY, ID_CLICK_HISTORY, ID_FORK_PAGE,
+    ID_OPEN_HISTORY, ID_CLICK_HISTORY, ID_FORK_PAGE, ID_FOLLOW_WINDHAWK,
     ID_PLACE_AUTO, ID_PLACE_TOP, ID_PLACE_TRAY, ID_PLACE_BOTTOM,  // "Position on a vertical taskbar"
     ID_CHART_DAYS_FIRST = 800,  // "Card chart period": ID_CHART_DAYS_FIRST + index in kChartDays
     ID_KEEP_DAYS_FIRST = 820,   // "Keep battery history": ID_KEEP_DAYS_FIRST + index in kKeepDays
@@ -160,6 +161,8 @@ bool g_keepMouseLastKnown = false;  // with "Hide last known", still show mice (
 bool g_brandColors = false;  // off by default; known brands get their color (Razer green, Logitech blue, ...)
 constexpr int kGlowSteps[] = { 0, 50, 100, 160, 230 };  // "Glow behind colored icons", percent of the default
 int g_glow = 100;
+bool g_followWindhawk = true;  // experimental: follow a tray moved by Windhawk taskbar mods (when Windhawk is found)
+bool g_windhawk = false;       // Windhawk found at startup
 std::atomic<DWORD> g_pollIntervalMs{ 60 * 1000 };  // set from the menu, read by the worker thread
 bool g_trackSince = false, g_trackAwake = false, g_trackEmpty = false;  // "Battery tracking" menu, off by default
 bool g_demo = false;         // --demo (see DemoDevices)
@@ -1682,6 +1685,11 @@ void RunCommand(UINT cmd) {
         case ID_LANG_ADD: i18n::OpenUserFolder(); break;
         case ID_MONITOR_MAIN: SetWidgetMonitor(L"main"); break;
         case ID_BRAND_COLORS: SetBrandColors(!g_brandColors); break;
+        case ID_FOLLOW_WINDHAWK:
+            g_followWindhawk = !g_followWindhawk;
+            SaveBoolSetting(L"FollowWindhawk", g_followWindhawk);
+            widget::SetFollowXamlTray(g_followWindhawk && g_windhawk);
+            break;
         case ID_STACKED: SetStacked(!g_stacked); break;
         case ID_PERCENT_SIGN: SetShowPercentSign(!g_showPercentSign); break;
         case ID_RING_STYLE: SetRingStyle(!g_ringStyle); break;
@@ -1979,6 +1987,19 @@ std::vector<panel::Setting> PanelSettings() {
         select(T(L"Glow behind colored icons"), c, g_wantWidget && (g_brandColors || !g_deviceColors.empty()));
     }
     hint(T(L"To give a device its own color, right-click it in the Devices tab (or click its ... button) and pick Choose color."));
+    if (g_windhawk) {  // experimental: only shown where Windhawk is installed or running
+        section(T(L"Windhawk (experimental)"));
+        toggle(T(L"Follow taskbar mods that move the clock"), ID_FOLLOW_WINDHAWK, g_followWindhawk, g_wantWidget);
+        const auto mods = windhawk::TaskbarMods();
+        std::wstring names;
+        for (const auto& m : mods) names += (names.empty() ? L"" : L", ") + m.name;
+        hint(mods.empty() ? std::wstring(T(L"Windhawk found, no taskbar mods turned on."))
+                          : TF(L"Taskbar mods turned on: {mods}.", { { L"mods", names } }));
+        if (windhawk::ModOn(mods, L"windows-11-taskbar-styler") && !g_widgetBackground)
+            hint(T(L"With a see-through taskbar theme, Background behind taskbar text keeps the levels readable."));
+        if (windhawk::ModOn(mods, L"taskbar-vertical"))
+            hint(T(L"Vertical Taskbar: the strip uses its column layout; tell us on GitHub if it ends up in the wrong place."));
+    }
     section(T(L"Card"));
     toggle(T(L"Show a card when the mouse rests on a device"), ID_HOVER_CARD, g_hoverCard, g_wantWidget);
     toggle(T(L"Show a chart in the card"), ID_HOVER_CHART, g_hoverChart, g_wantWidget && g_hoverCard && g_recordHistory);
@@ -2540,6 +2561,9 @@ int WINAPI wWinMain(HINSTANCE inst, HINSTANCE, PWSTR cmdLine, int) {
     g_brandColors = LoadBrandColors();
     g_glow = LoadGlow();
     widget::SetGlow(g_glow);
+    g_windhawk = windhawk::Found();
+    g_followWindhawk = LoadBoolSetting(L"FollowWindhawk", true);
+    widget::SetFollowXamlTray(g_followWindhawk && g_windhawk);
     g_stacked = LoadStacked();
     g_makeRoom = LoadMakeRoom();
     widget::SetMakeRoom(g_makeRoom);

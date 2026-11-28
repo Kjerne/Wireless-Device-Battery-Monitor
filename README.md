@@ -74,6 +74,8 @@ a `--dump`) help too.
 
 **MyDockFinder (experimental):** while MyDockFinder is running, Settings → Taskbar offers *Show on MyDockFinder*. The strip then sits left of MyFinder's system indicators on its bar and picks light or dark glyphs to match. It finds the indicators by having MyFinder draw its own bar in memory (no screen capture), so unusual themes or future MyDockFinder versions may throw the alignment off.
 
+**Windhawk (experimental):** where [Windhawk](https://windhawk.net) is installed, Settings → Taskbar lists its turned-on taskbar mods and offers *Follow taskbar mods that move the clock* (on by default). On a Windows 11 taskbar the strip then also reads the clock's own position with UI Automation, so a tray moved by a mod (for example Windows 11 Taskbar Styler themes) does not end up under it. Height, top and vertical taskbar mods move the taskbar window itself, which the strip already follows. With a see-through taskbar theme, turn on *Background behind taskbar text*. This was built from the mods' source code, not tested with every mod: if the strip lands in the wrong place, open a bug report with the mod names and a screenshot.
+
 **Moving the strip:** drag it along the taskbar to the left of its usual spot; it stays there. *Position on the taskbar* (Settings → Taskbar) sets the same distance.
 
 **Custom device names:** right-click a device on the panel's Devices tab (or click its *...* button) and choose *Rename device...* to set a name

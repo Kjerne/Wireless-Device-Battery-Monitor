@@ -321,6 +321,10 @@ int Hi(const RECT& r, bool vertical) { return vertical ? r.bottom : r.right; }
 std::vector<Span> g_spans;   // guarded by g_wbLock
 bool g_wbMirrors;            // guarded by g_wbLock: measure secondary taskbars too
 bool g_wbFarLeft;            // guarded by g_wbLock: measure the primary taskbar too (far-left spot)
+// Experimental (Windhawk): taskbar mods such as Windows 11 Taskbar Styler move the XAML tray and clock with
+// margins while TrayNotifyWnd keeps its old rectangle. With this on, the primary taskbar's clock is measured
+// too and the strip moves left of it when it sits further left than TrayNotifyWnd says (never further right).
+bool g_followXaml;           // guarded by g_wbLock
 
 IUIAutomationCondition* StringCondition(IUIAutomation* uia, PROPERTYID prop, const wchar_t* value) {
     VARIANT v;
@@ -526,7 +530,7 @@ DWORD WINAPI WidgetsButtonThread(LPVOID) {
             }
         }
         AcquireSRWLockShared(&g_wbLock);
-        bool mirrors = g_wbMirrors, farLeft = g_wbFarLeft;
+        bool mirrors = g_wbMirrors, farLeft = g_wbFarLeft || g_followXaml;
         ReleaseSRWLockShared(&g_wbLock);
         std::vector<Span> spans;
         if (bar && farLeft && uia && IsWindow(bar) && IsXamlTaskbar(bar)) spans.push_back(MeasureSpan(uia, bar));
@@ -612,6 +616,21 @@ bool FarLeftX(HWND bar, int width, int& x) {
                 ok = x + width + Px(4) <= limit;
             }
         }
+    ReleaseSRWLockShared(&g_wbLock);
+    return ok;
+}
+
+// Experimental (Windhawk): the screen x of the primary taskbar's XAML clock area, as last measured on
+// screen; rtl: its right edge. False when it was not measured (setting off, Windows 10 taskbar, no clock).
+bool XamlTrayEdge(HWND bar, bool rtl, int& edge) {
+    bool ok = false;
+    AcquireSRWLockShared(&g_wbLock);
+    if (g_followXaml)
+        for (const auto& s : g_spans)
+            if (s.bar == bar && s.measured && s.onScreen && s.hasClock) {
+                edge = rtl ? s.clockRight : s.clockLeft;
+                ok = true;
+            }
     ReleaseSRWLockShared(&g_wbLock);
     return ok;
 }
@@ -2229,6 +2248,14 @@ void SetVerticalPlace(VerticalPlace place) {
 
 bool Vertical() { return g_wnd && g_vertical; }
 
+void SetFollowXamlTray(bool on) {
+    AcquireSRWLockExclusive(&g_wbLock);
+    g_followXaml = on;
+    ReleaseSRWLockExclusive(&g_wbLock);
+    if (on && g_wbWake) SetEvent(g_wbWake);
+    if (g_wnd) Reposition();
+}
+
 void ApplyLeftSpot() {
     bool on = g_farLeft || g_beforeApps;
     AcquireSRWLockExclusive(&g_wbLock);
@@ -2532,6 +2559,10 @@ bool Reposition() {
     // edge, so a window's client-space left edge is its screen-space right edge.
     bool rtl = GetWindowLongW(g_taskbar, GWL_EXSTYLE) & WS_EX_LAYOUTRTL;
     int edge = rtl ? tr.right : tr.left;  // screen x we sit next to
+    // Experimental (Windhawk): a tray moved by XAML margins. Only ever further from the tray, so a wrong
+    // measurement can leave a gap but never put the strip over the clock.
+    if (int xe = 0; XamlTrayEdge(g_taskbar, rtl, xe) && (rtl ? xe > edge && xe < bar.right : xe < edge && xe > bar.left))
+        edge = xe;
     // Windows 10: News and Interests / Weather sits immediately left of the tray. The window that hosts it
     // depends on the build: ShellFeedsTaskbarViewWindow on some, DynamicContent2 on others (e.g. 19045,
     // where the search highlights button is DynamicContent1). Both are direct children of the taskbar and

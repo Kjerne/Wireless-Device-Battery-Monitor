@@ -71,6 +71,9 @@ void SetAnimateCharging(bool on);
 // Strength of the glow behind coloured device icons in percent: 0 = none, 100 = the default (kept across
 // Create/Destroy).
 void SetGlow(int percent);
+// Experimental (Windhawk taskbar mods): also follow the Windows 11 clock's own position, read with UI
+// Automation, when a mod has moved it left of where the taskbar's TrayNotifyWnd says (kept across Create/Destroy).
+void SetFollowXamlTray(bool on);
 // Steps past other apps' widgets in the taskbar (e.g. a network graph or a countdown) that sit where the
 // strip would go, so both stay readable (kept across Create/Destroy).
 void SetMakeRoom(bool on);
