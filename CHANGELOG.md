@@ -4,7 +4,7 @@ What changed in each KJ-BatteryHub release. The release workflow copies a versio
 release, so every version tag needs a section here, headed `## <version>`. Changes made in the original
 BatteryHub are listed in its own releases.
 
-## 1.3.3 (not released yet)
+## 1.3.3 (2026-11-28)
 
 - **Brand colors in the panel:** with *Brand colors* on, the Devices tab draws each device's icon (with its glow)
   and level mark in its brand color, the History tab its latest level, and the hover card's icon glows too.
